@@ -2,12 +2,13 @@ package com.example.isp_backend.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "users")
 public class User {
 
     @Id
@@ -16,5 +17,8 @@ public class User {
 
     private String email;
     private String password;
-    private String role;
+
+    private String fullName;
+
+    private LocalDateTime createdAt;
 }

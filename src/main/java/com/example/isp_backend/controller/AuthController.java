@@ -1,49 +1,57 @@
 package com.example.isp_backend.controller;
 
-import com.example.isp_backend.entity.User;
-import com.example.isp_backend.repository.UserRepository;
+import com.example.isp_backend.entity.*;
+import com.example.isp_backend.repository.*;
 import com.example.isp_backend.config.JwtUtil;
-
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Map;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "http://localhost:3000") // Prevent CORS issues
 public class AuthController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final OrganizationRepository organizationRepository;
+    private final MembershipRepository membershipRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    // 🔐 REGISTER
     @PostMapping("/register")
-    public Map<String, String> register(@RequestBody User user) {
+    public String register(@RequestBody User request) {
 
-        if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new RuntimeException("User already exists");
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new RuntimeException("Email already exists");
         }
 
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        user.setRole("USER");
+        // Create User
+        User user = new User();
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setFullName(request.getFullName());
+        user.setCreatedAt(LocalDateTime.now());
 
         userRepository.save(user);
 
-        return Map.of("message", "User Registered Successfully");
+        // Attach user to default organization
+        Organization org = organizationRepository.findAll().get(0);
+
+        Membership membership = new Membership();
+        membership.setUser(user);
+        membership.setOrganization(org);
+        membership.setRole(Role.ENGINEER);
+
+        membershipRepository.save(membership);
+
+        return "User Registered Successfully";
     }
 
-    // 🔐 LOGIN
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody User request) {
+    public String login(@RequestBody User request) {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -52,10 +60,6 @@ public class AuthController {
             throw new RuntimeException("Invalid password");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
-
-        return Map.of(
-                "message", "Login Successful",
-                "token", token
-        );
-    }}
+        return jwtUtil.generateToken(user.getEmail());
+    }
+}

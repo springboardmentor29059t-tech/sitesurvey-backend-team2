@@ -3,16 +3,20 @@ package com.example.isp_backend.controller;
 import com.example.isp_backend.entity.*;
 import com.example.isp_backend.repository.*;
 import com.example.isp_backend.config.JwtUtil;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:3000") // Prevent CORS issues
+@CrossOrigin(origins = "http://localhost:3000")
 public class AuthController {
 
     private final UserRepository userRepository;
@@ -21,8 +25,9 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
+    // ================= REGISTER =================
     @PostMapping("/register")
-    public String register(@RequestBody User request) {
+    public Map<String, String> register(@RequestBody User request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email already exists");
@@ -43,15 +48,25 @@ public class AuthController {
         Membership membership = new Membership();
         membership.setUser(user);
         membership.setOrganization(org);
-        membership.setRole(Role.ENGINEER);
+
+        // ✅ SET DEFAULT ROLE AS USER
+        membership.setRole(Role.ADMIN);
 
         membershipRepository.save(membership);
 
-        return "User Registered Successfully";
+        // Auto login after register
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("token", token);
+        response.put("role", "USER");
+
+        return response;
     }
 
+    // ================= LOGIN =================
     @PostMapping("/login")
-    public String login(@RequestBody User request) {
+    public Map<String, String> login(@RequestBody User request) {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -60,6 +75,19 @@ public class AuthController {
             throw new RuntimeException("Invalid password");
         }
 
-        return jwtUtil.generateToken(user.getEmail());
+        // Get role from membership
+        Membership membership = membershipRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Membership not found"));
+
+        String role = membership.getRole().name();
+
+        // Generate JWT
+        String token = jwtUtil.generateToken(user.getEmail());
+
+        Map<String, String> response = new HashMap<>();
+        response.put("token", token);
+        response.put("role", role);
+
+        return response;
     }
 }

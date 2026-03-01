@@ -7,7 +7,7 @@ services:
     container_name: isp_mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: mysql
       MYSQL_DATABASE: isp_survey
     ports:
       - "3307:3306"

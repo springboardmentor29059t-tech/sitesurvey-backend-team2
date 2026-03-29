@@ -9,6 +9,5 @@ import java.util.List;
 @Repository
 public interface PropertyRepository extends JpaRepository<Property, Long> {
 
-    // ✅ THIS LINE FIXES YOUR ERROR
     List<Property> findByUserId(Long userId);
 }

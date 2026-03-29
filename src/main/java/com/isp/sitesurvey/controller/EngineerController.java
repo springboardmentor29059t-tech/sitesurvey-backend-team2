@@ -1,6 +1,5 @@
 package com.isp.sitesurvey.controller;
 
-import com.isp.sitesurvey.entity.User;
 import com.isp.sitesurvey.repository.UserRepository;
 import com.isp.sitesurvey.repository.PropertyRepository;
 import jakarta.persistence.EntityManager;
@@ -16,13 +15,9 @@ import java.util.*;
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:3000"})
 public class EngineerController {
 
-    private final UserRepository userRepository;
-    private final PropertyRepository propertyRepository;
     private final EntityManager entityManager;
 
-    public EngineerController(UserRepository userRepository, PropertyRepository propertyRepository, EntityManager entityManager) {
-        this.userRepository = userRepository;
-        this.propertyRepository = propertyRepository;
+    public EngineerController(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
@@ -72,9 +67,10 @@ public class EngineerController {
                 map.put("surveyStatus", status);
 
                 // 3. Fetch properties for this specific client
+                // ✅ FIX: Added a check for image_data to set the hasImage flag
                 @SuppressWarnings("unchecked")
                 List<Object[]> props = entityManager.createNativeQuery(
-                    "SELECT id, name, city FROM properties WHERE user_id = :cid")
+                    "SELECT id, name, city, CASE WHEN image_data IS NOT NULL THEN true ELSE false END FROM properties WHERE user_id = :cid")
                     .setParameter("cid", clientId)
                     .getResultList();
 
@@ -84,6 +80,15 @@ public class EngineerController {
                     pMap.put("propertyId", pRow[0]);
                     pMap.put("name", pRow[1]);
                     pMap.put("city", pRow[2]);
+                    
+                    // ✅ FIX: Ensure hasImage is properly parsed as a boolean
+                    boolean hasImage = false;
+                    if (pRow[3] != null) {
+                        // Depending on the DB driver, Native Query booleans might return as Integer (1/0), Boolean, or Byte
+                        hasImage = (pRow[3] instanceof Boolean) ? (Boolean) pRow[3] : ((Number) pRow[3]).intValue() > 0;
+                    }
+                    pMap.put("hasImage", hasImage);
+                    
                     propList.add(pMap);
                 }
 
@@ -125,6 +130,7 @@ public class EngineerController {
                          "JOIN floors f ON s.floor_id = f.id " +
                          "JOIN buildings b ON f.building_id = b.id WHERE b.property_id = :id";
                          
+            @SuppressWarnings("unchecked")
             List<Object[]> results = entityManager.createNativeQuery(sql)
                     .setParameter("id", propertyId)
                     .getResultList();

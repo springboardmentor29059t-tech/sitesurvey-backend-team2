@@ -164,6 +164,7 @@ public class AdminController {
     @Transactional(readOnly = true)
     public ResponseEntity<?> getPropertyFloors(@PathVariable Long id) {
         try {
+            @SuppressWarnings("unchecked")
             List<Object[]> results = entityManager.createNativeQuery(
                     "SELECT f.id, f.level_label, f.plan_file_id, b.name as building_name " +
                     "FROM floors f JOIN buildings b ON f.building_id = b.id " +
@@ -190,6 +191,7 @@ public class AdminController {
     @Transactional(readOnly = true)
     public ResponseEntity<?> getFloorSpaces(@PathVariable Long floorId) {
         try {
+            @SuppressWarnings("unchecked")
             List<Object[]> results = entityManager.createNativeQuery(
                     "SELECT id, name, type, area_sqm, notes FROM spaces WHERE floor_id = :floorId")
                     .setParameter("floorId", floorId)

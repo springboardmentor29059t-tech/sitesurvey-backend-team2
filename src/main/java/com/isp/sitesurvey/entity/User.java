@@ -5,16 +5,20 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * User entity.
+ */
 @Entity
 @Table(name = "users")
-@Getter 
-@Setter 
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
@@ -54,12 +58,17 @@ public class User {
     @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    // --- NEW SURVEY TRACKING FIELDS ---
+    @Column(name = "profile_picture_url", columnDefinition = "TEXT")
+    private String profilePictureUrl;
+
     @Column(name = "survey_status")
-    private String surveyStatus = "PENDING"; // PENDING, IN_PROGRESS, COMPLETED
+    private String surveyStatus = "PENDING";
 
     @Column(name = "floor_plan_url")
     private String floorPlanUrl;
+
+    @Column(name = "receive_email_alerts")
+    private Boolean receiveEmailAlerts = true;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -69,7 +78,6 @@ public class User {
     )
     private Set<Role> roles = new HashSet<>();
 
-    // --- WORKLOAD ASSIGNMENT RELATIONSHIPS ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_engineer_id")
     @JsonIgnoreProperties({"assignedClients", "handler", "hibernateLazyInitializer"})
@@ -79,29 +87,13 @@ public class User {
     @JsonIgnore
     private Set<User> assignedClients = new HashSet<>();
 
-    // --- MANUAL SETTERS (Ensures compilation success) ---
-    public void setSurveyStatus(String surveyStatus) {
-        this.surveyStatus = surveyStatus;
-    }
-
-    public String getSurveyStatus() {
-        return this.surveyStatus;
-    }
-
-    public void setLastLogin(LocalDateTime lastLogin) {
-        this.lastLogin = lastLogin;
-    }
-
-    public void setAssignedEngineer(User engineer) {
-        this.assignedEngineer = engineer;
-    }
-
-    // --- JPA HOOKS ---
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (this.surveyStatus == null) this.surveyStatus = "PENDING";
+        if (this.surveyStatus == null) {
+            this.surveyStatus = "PENDING";
+        }
     }
 
     @PreUpdate

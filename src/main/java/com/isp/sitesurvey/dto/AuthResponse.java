@@ -18,7 +18,7 @@ public class AuthResponse {
 
     private String accessToken;
     private String refreshToken;
-    private String tokenType = "Bearer";
+    private final String tokenType = "Bearer";
     private Long userId;
     private String username;
     private String email;
@@ -26,14 +26,17 @@ public class AuthResponse {
     private Set<String> roles;
     private String message;
 
+    // 👇 ADDED: The missing phone number field
+    private String phoneNumber;
+
     // Constructor for simple success messages
     public AuthResponse(String message) {
         this.message = message;
     }
 
-    // Constructor for login/signup response
+    // 👇 ADDED: phoneNumber parameter to constructor
     public AuthResponse(String accessToken, String refreshToken, Long userId, 
-                       String username, String email, String fullName, Set<String> roles) {
+                       String username, String email, String fullName, Set<String> roles, String phoneNumber) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.userId = userId;
@@ -41,5 +44,6 @@ public class AuthResponse {
         this.email = email;
         this.fullName = fullName;
         this.roles = roles;
+        this.phoneNumber = phoneNumber; 
     }
 }

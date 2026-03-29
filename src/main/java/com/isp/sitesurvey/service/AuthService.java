@@ -95,7 +95,8 @@ public class AuthService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getFullName(),
-                roles
+                roles,
+                user.getPhoneNumber() // ADDED: Phone number is now sent back on signup
         );
     }
 
@@ -138,7 +139,8 @@ public class AuthService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getFullName(),
-                roles
+                roles,
+                user.getPhoneNumber() // ADDED: Phone number is now sent back on login
         );
     }
 
@@ -148,7 +150,7 @@ public class AuthService {
     @Transactional
     public AuthResponse forgotPassword(ForgotPasswordRequest request) {
         // Check if user exists
-        User user = userRepository.findByEmail(request.getEmail())
+        userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("No account found with this email"));
 
         // Invalidate previous OTPs

@@ -1,11 +1,10 @@
 package com.isp.sitesurvey.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "properties")
@@ -15,82 +14,63 @@ public class Property {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String name;
+
+    @Column(name = "address_line1")
+    private String addressLine1;
+
+    @Column(name = "address_line2")
+    private String addressLine2;
+
+    private String city;
+    private String state;
+    private String country;
+
+    @Column(name = "postal_code")
+    private String postalCode;
+
+    @Lob
+    @JsonIgnore 
+    @Column(name = "image_data", columnDefinition = "MEDIUMBLOB")
+    private byte[] imageData;
+
+    @Column(name = "image_content_type")
+    private String imageContentType;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "organization_id")
     private Organization organization;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(nullable = false, length = 200)
-    private String name;
-
-    @Column(name = "address_line1", length = 200)
-    private String addressLine1;
-
-    @Column(name = "address_line2", length = 200)
-    private String addressLine2;
-
-    @Column(length = 100)
-    private String city;
-
-    @Column(length = 100)
-    private String state;
-
-    @Column(name = "postal_code", length = 20)
-    private String postalCode;
-
-    @Column(length = 100)
-    private String country = "USA";
-
-    /* ================= MAIN IMAGE ================= */
-
+    // ✅ FIX 1: The missing field that caused "cannot be resolved"
     @JsonIgnore
-    @Lob
-    @Column(name = "image_data", columnDefinition = "LONGBLOB")
-    private byte[] imageData;
-
-    @Column(name = "image_content_type", length = 50)
-    private String imageContentType;
-
-    /* ================= EXTRA IMAGES ================= */
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<PropertyImage> extraImages = new ArrayList<>();
 
-    /* ================= META ================= */
-
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @JsonIgnore
+    // ✅ FIX 2: Added Equipment relationship with Cascade to fix your Delete error
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Building> buildings = new ArrayList<>();
+    @JsonIgnore
+    private List<Equipment> equipments = new ArrayList<>();
+
+    public Property() {}
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 
-    /* ================= HELPER METHOD (FOR FRONTEND) ================= */
-
-    /**
-     * Sends ONLY extra image IDs to frontend (no binary data)
-     */
-    public List<Long> getExtraImageIds() {
-        if (extraImages == null) {
-            return new ArrayList<>();
-        }
-        return extraImages.stream()
-                .map(PropertyImage::getId)
-                .collect(java.util.stream.Collectors.toList());
-    }
-
-    /* ================= MANUAL GETTERS & SETTERS ================= */
+    // =======================
+    // GETTERS AND SETTERS
+    // =======================
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -110,17 +90,11 @@ public class Property {
     public String getState() { return state; }
     public void setState(String state) { this.state = state; }
 
-    public String getPostalCode() { return postalCode; }
-    public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
-
     public String getCountry() { return country; }
     public void setCountry(String country) { this.country = country; }
 
-    public User getUser() { return user; }
-    public void setUser(User user) { this.user = user; }
-
-    public Organization getOrganization() { return organization; }
-    public void setOrganization(Organization organization) { this.organization = organization; }
+    public String getPostalCode() { return postalCode; }
+    public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
 
     public byte[] getImageData() { return imageData; }
     public void setImageData(byte[] imageData) { this.imageData = imageData; }
@@ -128,11 +102,18 @@ public class Property {
     public String getImageContentType() { return imageContentType; }
     public void setImageContentType(String imageContentType) { this.imageContentType = imageContentType; }
 
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public Organization getOrganization() { return organization; }
+    public void setOrganization(Organization organization) { this.organization = organization; }
+
+    public User getUser() { return user; }
+    public void setUser(User user) { this.user = user; }
+
     public List<PropertyImage> getExtraImages() { return extraImages; }
     public void setExtraImages(List<PropertyImage> extraImages) { this.extraImages = extraImages; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-
-    public List<Building> getBuildings() { return buildings; }
-    public void setBuildings(List<Building> buildings) { this.buildings = buildings; }
+    public List<Equipment> getEquipments() { return equipments; }
+    public void setEquipments(List<Equipment> equipments) { this.equipments = equipments; }
 }

@@ -327,14 +327,4 @@ public class AccountManagerController {
         }
     }
 
-    /**
-     * Check if client has completed any work
-     */
-    private boolean hasClientCompletedWork(User client) {
-        List<Property> properties = propertyRepository.findAll().stream()
-            .filter(p -> p.getUser() != null && p.getUser().getId().equals(client.getId()))
-            .collect(Collectors.toList());
-
-        return properties.stream().anyMatch(this::hasCompletedSurvey);
-    }
 }

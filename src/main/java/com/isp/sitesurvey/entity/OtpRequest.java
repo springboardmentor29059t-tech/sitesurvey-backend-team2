@@ -2,17 +2,31 @@ package com.isp.sitesurvey.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 /**
- * OTP Request Entity - Stores OTP codes for password reset
- * OTPs expire after 30 seconds
+ * OTP Request Entity.
+ *
+ * FIX: replaced @Data with explicit @Getter + @Setter.
+ *
+ * @Data includes @EqualsAndHashCode and @ToString, both of which generate
+ * methods that can conflict with the hand-written isExpired() / isValid()
+ * helpers (the compiler sees isExpired as a potential getter for a field
+ * "expired" and gets confused).  Using @Getter + @Setter avoids that and
+ * keeps the class clean.
+ *
+ * The Boolean field "isUsed" will get:
+ *   Lombok getter → getIsUsed()   ← matches AuthService call otpRequest.getIsUsed()
+ *   Lombok setter → setIsUsed()   ← matches AuthService call otpRequest.setIsUsed(true)
  */
 @Entity
 @Table(name = "otp_requests")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class OtpRequest {
@@ -42,15 +56,14 @@ public class OtpRequest {
     }
 
     /**
-     * Check if OTP is expired
+     * These are business-logic helpers, not getters for a field.
+     * Naming them is*() is fine because there is no field called
+     * "expired" or "valid" — Lombok won't clash with them.
      */
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiryTime);
     }
 
-    /**
-     * Check if OTP is valid (not used and not expired)
-     */
     public boolean isValid() {
         return !isUsed && !isExpired();
     }

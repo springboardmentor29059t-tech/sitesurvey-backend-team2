@@ -6,6 +6,7 @@ import com.isp.sitesurvey.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -60,26 +61,50 @@ public class SecurityConfig {
 
             // Authorization rules
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // -------------------------------------------------------------
+                // PUBLIC ENDPOINTS (No Token Required)
+                // -------------------------------------------------------------
                 .requestMatchers(
                     "/api/auth/**",
-                    "/api/properties/*/image", 
-                    "/api/files/**",           // ✅ Allows floor plan images to load
+                    "/api/files/**",           // Allows floor plan files
                     "/error",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
-                    "/api/engineer/**"         // ✅ MOVED HERE: Bypasses 403 error for Jane
+                    "/api/engineer/**"         // Bypasses 403 error for Jane
                 ).permitAll()
 
-                // Role-based access
-                .requestMatchers("/api/admin/**").hasRole("ADMIN") 
-                // .requestMatchers("/api/engineer/**").hasRole("ONSITE_ENGINEER") // Commented out to prevent 403
+                // Allow public VIEWING of images (GET), but keep uploads locked down
+                .requestMatchers(HttpMethod.GET, "/api/properties/*/image").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/properties/extra-images/*").permitAll()
+
+                // Allow GET access to checklists so the React panel can load templates
+                .requestMatchers(HttpMethod.GET, "/api/checklists", "/api/checklists/**").permitAll()
+
+                // -------------------------------------------------------------
+                // AUTHENTICATED ENDPOINTS (Requires Valid Token)
+                // -------------------------------------------------------------
+                
+                // Explicitly permit PATCH and PUT on checklist responses (Needed for CORS)
+                .requestMatchers(HttpMethod.PATCH, "/api/checklists/responses/**").authenticated()
+                .requestMatchers(HttpMethod.PUT,   "/api/checklists/responses/**").authenticated()
+
+                // RF Tools 
+                .requestMatchers("/api/rf/**").authenticated()
+
+                // -------------------------------------------------------------
+                // ROLE-BASED ENDPOINTS (Requires Specific Roles)
+                // -------------------------------------------------------------
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/client/**").hasRole("CLIENT")
                 .requestMatchers("/api/account/**").hasRole("ACCOUNT_MANAGER")
                 .requestMatchers("/api/finance/**").hasRole("FINANCE_MANAGER")
+                .requestMatchers("/api/reports/**").hasAnyRole("ADMIN", "ACCOUNT_MANAGER", "ONSITE_ENGINEER")
+                
+                // FIXED: Reports are strictly for Admins and Account Managers
+                .requestMatchers("/api/reports/**").hasAnyRole("ADMIN", "ACCOUNT_MANAGER")
 
-                // Everything else requires authentication
+                // Everything else not explicitly mentioned requires authentication
                 .anyRequest().authenticated()
             )
 
@@ -94,6 +119,7 @@ public class SecurityConfig {
 
     /**
      * CORS configuration (Vite frontend)
+     * Includes GET, POST, PUT, DELETE, PATCH, OPTIONS to prevent CORS block on checklists
      */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
@@ -102,12 +128,12 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
             "http://localhost:5173",  // Vite frontend default
-            "http://localhost:5174",   // Added Vite frontend alternate
-            "http://localhost:3000"    // Added standard React port just in case
+            "http://localhost:5174",  // Alternate Vite frontend port
+            "http://localhost:3000"   // Standard React port
         ));
 
         configuration.setAllowedMethods(List.of(
-            "GET", "POST", "PUT", "DELETE", "OPTIONS"
+            "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
 
         configuration.setAllowedHeaders(List.of("*"));

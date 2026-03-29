@@ -1,5 +1,2 @@
 target/
 *.class
-*.jar
-uploads/
-.env

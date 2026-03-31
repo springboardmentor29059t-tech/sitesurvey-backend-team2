@@ -1,8 +1,0 @@
-com\example\isp_backend\controller\TestController.class
-com\example\isp_backend\IspBackendApplication.class
-com\example\isp_backend\entity\User.class
-com\example\isp_backend\repository\UserRepository.class
-com\example\isp_backend\controller\AuthController.class
-com\example\isp_backend\config\SecurityConfig.class
-com\example\isp_backend\config\JwtFilter.class
-com\example\isp_backend\config\JwtUtil.class
